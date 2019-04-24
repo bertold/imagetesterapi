@@ -1,5 +1,7 @@
 # Image Tester API
 
+![Build status](https://travis-ci.org/bertold/imagetesterapi.svg?branch=master)
+
 This is an attempt to show how I would like to use the AppliTools image tester
 tool as an API. This code wraps invoking the command-line utility behind an
 interface.
