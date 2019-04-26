@@ -10,7 +10,6 @@ import org.testng.annotations.Test;
 
 import java.awt.*;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -23,16 +22,16 @@ import static org.testng.Assert.*;
 @Test
 public class ImageTesterTest {
 
-    private static final String RESOURCE_PATH = "src/test/resources";
     private static final String TARGET_PATH = "target";
+    private final String testFilename = "invoice-" + System.currentTimeMillis() + ".pdf";
     private String apiKey;
 
     @DataProvider
     public Object[][] singleFileTestData() {
         return new Object[][]{
-                { "invoice1.pdf", "invoice.pdf", ResultCode.SUCCESS},
-                { "invoice1.pdf", "invoice.pdf", ResultCode.SUCCESS},
-                { "invoice2.pdf", "invoice.pdf", ResultCode.FAIL}
+                { "invoice1.pdf", testFilename, ResultCode.SUCCESS},
+                { "invoice1.pdf", testFilename, ResultCode.SUCCESS},
+                { "invoice2.pdf", testFilename, ResultCode.FAIL}
 
         };
     }
@@ -109,7 +108,7 @@ public class ImageTesterTest {
         );
 
         Properties props = new Properties();
-        props.load(new FileInputStream(new File(RESOURCE_PATH, "happypath.properties")));
+        props.setProperty(Parameters.FOLDER.getName(), new File(TARGET_PATH, testFilename).toString());
         props.setProperty(Parameters.APIKEY.getName(), apiKey);
         ImageTester tester = new ImageTester(props);
         assertEquals(tester.execute(), expected);
