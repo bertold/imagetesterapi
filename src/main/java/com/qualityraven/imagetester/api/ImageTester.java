@@ -49,21 +49,18 @@ public class ImageTester {
             }
         }
         Process process = Runtime.getRuntime().exec(args.toArray(new String[0]));
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line;
         ResultCode resultCode = null;
-        while ((line = reader.readLine()) != null) {
-            if (line.contains("[New]") || line.contains("[Passed]")) {
-                resultCode = ResultCode.SUCCESS;
-                break;
-            }
-            if (line.contains("[Mismatch]")) {
-                resultCode = ResultCode.FAIL;
-                break;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while (resultCode == null && (line = reader.readLine()) != null) {
+                if (line.contains("[New]") || line.contains("[Passed]")) {
+                    resultCode = ResultCode.SUCCESS;
+                } else if (line.contains("[Mismatch]")) {
+                    resultCode = ResultCode.FAIL;
+                    break;
+                }
             }
         }
-
-        reader.close();
 
         if (resultCode == null) {
             resultCode = ResultCode.EXECUTION_ERROR;
