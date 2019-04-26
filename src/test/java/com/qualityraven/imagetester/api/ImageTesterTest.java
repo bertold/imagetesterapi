@@ -1,6 +1,5 @@
 package com.qualityraven.imagetester.api;
 
-import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -13,6 +12,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Properties;
+
+import static org.testng.Assert.*;
 
 @Test
 public class ImageTesterTest {
@@ -39,7 +40,7 @@ public class ImageTesterTest {
             apiKey = System.getenv("APPLITOOLS_APIKEY");
         }
         if (null == apiKey || apiKey.isEmpty()) {
-            Assert.fail("Either set the applitools.apiKey system property or " +
+            fail("Either set the applitools.apiKey system property or " +
                             "the APPLITOOLS_APIKEY environment variable");
         }
     }
@@ -58,7 +59,7 @@ public class ImageTesterTest {
         props.load(new FileInputStream(new File(RESOURCE_PATH, "happypath.properties")));
         props.setProperty(Parameters.APIKEY.getName(), apiKey);
         ImageTester tester = new ImageTester(props);
-        Assert.assertEquals(expected, tester.execute());
+        assertEquals(expected, tester.execute());
     }
 
     @Test(dataProvider = "singleFileTestData")
@@ -72,6 +73,6 @@ public class ImageTesterTest {
         ImageTester tester = new ImageTester(
                 apiKey,
                 Collections.singletonMap(Parameters.FOLDER.getName(), new File(RESOURCE_PATH, targetFile).toString()));
-        Assert.assertEquals(expected, tester.execute());
+        assertEquals(expected, tester.execute());
     }
 }
