@@ -1,7 +1,6 @@
 # Image Tester API
 
 ![Build status](https://travis-ci.org/bertold/imagetesterapi.svg?branch=master)
-[![DepShield Badge](https://depshield.sonatype.org/badges/bertold/imagetesterapi/depshield.svg)](https://depshield.github.io)
 
 This is an attempt to show how I would like to use the AppliTools image tester
 tool as an API. This code wraps invoking the command-line utility behind an
