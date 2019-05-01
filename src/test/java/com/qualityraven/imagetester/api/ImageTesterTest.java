@@ -11,10 +11,12 @@ import org.testng.annotations.Test;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.testng.Assert.*;
@@ -22,16 +24,16 @@ import static org.testng.Assert.*;
 @Test
 public class ImageTesterTest {
 
-    private static final String TARGET_PATH = "target";
+    private static final String TARGET_PATH = "target/testfiles";
     private final String testFilename = "invoice-" + System.currentTimeMillis() + ".pdf";
     private String apiKey;
 
     @DataProvider
     public Object[][] singleFileTestData() {
         return new Object[][]{
-                { "invoice1.pdf", testFilename, ResultCode.SUCCESS},
-                { "invoice1.pdf", testFilename, ResultCode.SUCCESS},
-                { "invoice2.pdf", testFilename, ResultCode.FAIL}
+                { "invoice1.pdf", testFilename, ResultCode.SUCCESS}, // new file
+                { "invoice1.pdf", testFilename, ResultCode.SUCCESS}, // same file, expect success
+                { "invoice2.pdf", testFilename, ResultCode.FAIL}     // content changed, expect failure
 
         };
     }
@@ -57,7 +59,16 @@ public class ImageTesterTest {
      */
     @BeforeClass
     public void createPdfSamples() throws IOException {
-        for (int i=1; i<3; i++) {
+        File pdfDirectory = new File(TARGET_PATH);
+        if (!pdfDirectory.exists()) {
+            assertTrue(pdfDirectory.mkdirs());
+        }
+        File multiFileDirectory = new File(pdfDirectory, "multipleFiles");
+        if (!multiFileDirectory.exists()) {
+            assertTrue(multiFileDirectory.mkdir());
+        }
+
+        for (int i=1; i<7; i++) {
             try (PDDocument doc = new PDDocument()) {
                 PDPage page = new PDPage();
                 doc.addPage(page);
@@ -127,4 +138,58 @@ public class ImageTesterTest {
                 Collections.singletonMap(Parameters.FOLDER.getName(), new File(TARGET_PATH, targetFile).toString()));
         assertEquals(tester.execute(), expected);
     }
+
+    @Test
+    public void testDirectParams_multipleFiles() throws IOException {
+        final String suffix = "-" + System.currentTimeMillis() + ".pdf";
+
+        // Test 1: test with new files
+        for (int i=1; i<4; i++) {
+            Files.copy(
+                Paths.get(TARGET_PATH, "invoice" + i + ".pdf"),
+                Paths.get(TARGET_PATH, "multipleFiles", "invoice-multi-" + i + suffix),
+                StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        ImageTester tester = new ImageTester(
+                apiKey,
+                Collections.singletonMap(Parameters.FOLDER.getName(), new File(TARGET_PATH, "multipleFiles").toString()));
+        assertEquals(tester.execute(), ResultCode.SUCCESS);
+
+        assertFalse(tester.getLastResult().isEmpty());
+        for (Map.Entry<String,TestResult> individualResult : tester.getLastResult().entrySet()) {
+            TestResult testResult = individualResult.getValue();
+            assertEquals(testResult.getResultCode(), ResultCode.SUCCESS);
+            assertEquals(testResult.getResultURI(), URI.create(""));
+        }
+
+        // Test 2: run test with the same set of files again
+        assertEquals(tester.execute(), ResultCode.SUCCESS);
+        assertFalse(tester.getLastResult().isEmpty());
+        for (Map.Entry<String,TestResult> individualResult : tester.getLastResult().entrySet()) {
+            TestResult testResult = individualResult.getValue();
+            assertEquals(individualResult.getValue().getResultCode(), ResultCode.SUCCESS);
+            assertEquals(testResult.getResultURI(), URI.create(""));
+        }
+
+        // Test 3: replace files and expect failure
+        for (int i=1; i<4; i++) {
+            Files.copy(
+                    Paths.get(TARGET_PATH, "invoice" + (i+3) + ".pdf"),
+                    Paths.get(TARGET_PATH, "multipleFiles", "invoice-multi-" + i + suffix),
+                    StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        assertEquals(tester.execute(), ResultCode.FAIL);
+        assertFalse(tester.getLastResult().isEmpty());
+        for (Map.Entry<String,TestResult> individualResult : tester.getLastResult().entrySet()) {
+            TestResult testResult = individualResult.getValue();
+            assertEquals(testResult.getResultCode(), ResultCode.FAIL);
+            // ensure that the test result URI is set
+            assertNotNull(testResult.getResultURI());
+            assertNotEquals(testResult.getResultURI(), URI.create(""));
+        }
+
+    }
+
 }
