@@ -51,6 +51,7 @@ switch (tester.execute()) {
             default:
                 assert false;  
 }
+```
 
 Invoking command-line tools from Java are a bad practice for the following reasons:
 
